@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class PlayerLook : MonoBehaviour
 {
+    public bool canLook = true;
+
     public Transform cameraPivot;
 
     public float mouseSensitivity = 100f;
@@ -17,6 +19,8 @@ public class PlayerLook : MonoBehaviour
 
     private void Update()
     {
+        if (!canLook) return;
+
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
