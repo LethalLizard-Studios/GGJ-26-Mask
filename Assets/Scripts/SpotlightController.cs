@@ -1,9 +1,11 @@
+using DG.Tweening;
 using UnityEngine;
 
 public class SpotlightController : MonoBehaviour
 {
     [SerializeField] private Transform cameraPivot;
     [SerializeField] private Transform[] spotlights;
+    [SerializeField] private Transform[] spotlightLookAt;
 
     [SerializeField] private KeyCode leaveKey;
 
@@ -14,7 +16,10 @@ public class SpotlightController : MonoBehaviour
 
     public void TakeControl(int index)
     {
-        cameraPivot.position = spotlights[Mathf.Max(Mathf.Min(index, spotlights.Length - 1), 0)].position;
+        int lightIndex = Mathf.Max(Mathf.Min(index, spotlights.Length - 1), 0);
+
+        cameraPivot.position = spotlights[lightIndex].position;
+        cameraPivot.GetChild(0).LookAt(spotlightLookAt[lightIndex], Vector3.up);
 
         spotlightParent.SetActive(true);
         playerParent.SetActive(false);
