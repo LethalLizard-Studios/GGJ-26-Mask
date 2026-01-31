@@ -5,125 +5,210 @@ using UnityEngine;
 public class PlayerInteract : MonoBehaviour
 {
     [Header("Interaction Settings")]
-    public float interactDistance = 3f;
-    public LayerMask interactableLayer;
-    public KeyCode interactKey = KeyCode.F;
-    public KeyCode sitKey = KeyCode.E;
-    public PlayerMovement movement;
+    [SerializeField] private PropPickupPoint pickupPoint;
+    [SerializeField] private float interactDistance = 3f;
+    [SerializeField] private LayerMask interactableLayer;
+    [SerializeField] private KeyCode interactKey = KeyCode.F;
+    [SerializeField] private KeyCode sitKey = KeyCode.E;
+    [SerializeField] private PlayerMovement movement;
 
     [Header("UI")]
-    public TextMeshProUGUI interactText;
-    public string promptMessage = "Press F to pick up";
-    public string promptSittingMessage = "Press E to sit";
+    [SerializeField] private TextMeshProUGUI interactText;
+    [SerializeField] private TextMeshProUGUI throwText;
+    [SerializeField] private string promptMessage = "Press F to pick up";
+    [SerializeField] private string promptSittingMessage = "Press E to sit";
+    [SerializeField] private string throwPromptMessage = "Press LMB to throw";
 
-    private Camera cam;
-    private Transform currentTarget;
-    private PropPickup currentPickup;
-    private bool isSitting = false;
-    private Vector3 preSeatPosition = Vector3.zero;
-    private bool isShowing = false;
-    private Tween fadeTween;
-    private Tween scaleTween;
+    private Camera m_cam;
+    private Transform m_currentTarget;
+    private PropPickup m_currentPickup;
+    private PropPickup m_subscribedPickup;
+    private bool m_isSitting;
+    private Vector3 m_preSeatPosition = Vector3.zero;
 
-    void Start()
+    private bool m_isShowingInteract;
+    private Tween m_interactFadeTween;
+    private Tween m_interactScaleTween;
+
+    private bool m_isShowingThrow;
+    private Tween m_throwFadeTween;
+    private Tween m_throwScaleTween;
+
+    private void Start()
     {
-        cam = GetComponent<Camera>();
-        interactText.gameObject.SetActive(false);
-        interactText.alpha = 0f;
-        interactText.transform.localScale = Vector3.one;
+        m_cam = GetComponent<Camera>();
+        InitializeText(interactText);
+        InitializeText(throwText);
     }
 
-    void Update()
+    private void OnDisable()
+    {
+        UnsubscribeFromPickup();
+        HideInteractPrompt();
+        HideThrowPrompt();
+    }
+
+    private void InitializeText(TextMeshProUGUI text)
+    {
+        text.gameObject.SetActive(false);
+        text.alpha = 0f;
+        text.transform.localScale = Vector3.one;
+    }
+
+    private void Update()
     {
         HandleRaycast();
     }
 
-    void HandleRaycast()
+    private void HandleRaycast()
     {
-        Ray ray = new Ray(cam.transform.position, cam.transform.forward);
+        Ray ray = new Ray(m_cam.transform.position, m_cam.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactableLayer))
         {
             if (hit.collider.CompareTag("Interactable"))
             {
-                currentTarget = hit.transform;
-                if (currentTarget.TryGetComponent<PropPickup>(out currentPickup))
+                m_currentTarget = hit.transform;
+
+                if (m_currentTarget.TryGetComponent<PropPickup>(out PropPickup pickup))
                 {
-                    ShowPrompt((currentPickup.sitPoint != null)
+                    m_currentPickup = pickup;
+                    SubscribeToPickup(m_currentPickup);
+
+                    ShowInteractPrompt((m_currentPickup.SitPoint != null)
                         ? promptSittingMessage + "\n" + promptMessage
                         : promptMessage);
 
                     if (Input.GetKeyDown(interactKey))
                     {
-                        currentPickup.Pickup();
-                        HidePrompt();
+                        m_currentPickup.Pickup(pickupPoint.transform);
+                        HideInteractPrompt();
                     }
-                    else if (Input.GetKeyDown(sitKey) && currentPickup.sitPoint != null)
+                    else if (Input.GetKeyDown(sitKey) && m_currentPickup.SitPoint != null)
                     {
-                        SitDown(currentPickup.sitPoint);
+                        SitDown(m_currentPickup.SitPoint);
                     }
+
+                    return;
                 }
-                else if (currentTarget.TryGetComponent<Interactable>(out Interactable currentInteractable))
+
+                if (m_currentTarget.TryGetComponent<Interactable>(out Interactable currentInteractable))
                 {
                     if (!currentInteractable.CanBeInteractedWith())
                     {
-                        HidePrompt();
+                        HideInteractPrompt();
                         return;
                     }
 
-                    ShowPrompt(currentInteractable.promptMessage);
+                    ShowInteractPrompt(currentInteractable.promptMessage);
                     if (Input.GetKeyDown(interactKey)) currentInteractable.Interact();
+
+                    return;
                 }
-                return;
             }
         }
 
-        HidePrompt();
-        currentTarget = null;
-        currentPickup = null;
+        HideInteractPrompt();
+        m_currentTarget = null;
+        m_currentPickup = null;
     }
 
-    void ShowPrompt(string message)
+    private void SubscribeToPickup(PropPickup pickup)
     {
-        if (isShowing && interactText.text == message) return;
+        if (pickup == m_subscribedPickup) return;
+
+        UnsubscribeFromPickup();
+        m_subscribedPickup = pickup;
+
+        if (m_subscribedPickup == null) return;
+
+        m_subscribedPickup.HeldChanged += OnPickupHeldChanged;
+        OnPickupHeldChanged(m_subscribedPickup.IsHeld);
+    }
+
+    private void UnsubscribeFromPickup()
+    {
+        if (m_subscribedPickup == null) return;
+
+        m_subscribedPickup.HeldChanged -= OnPickupHeldChanged;
+        m_subscribedPickup = null;
+        HideThrowPrompt();
+    }
+
+    private void OnPickupHeldChanged(bool isHeld)
+    {
+        if (isHeld) ShowThrowPrompt(throwPromptMessage);
+        else HideThrowPrompt();
+    }
+
+    private void ShowInteractPrompt(string message)
+    {
+        if (m_isShowingInteract && interactText.text == message) return;
 
         interactText.text = message;
         interactText.gameObject.SetActive(true);
-        fadeTween?.Kill();
-        scaleTween?.Kill();
+        m_interactFadeTween?.Kill();
+        m_interactScaleTween?.Kill();
 
-        fadeTween = interactText.DOFade(1f, 0.25f);
+        m_interactFadeTween = interactText.DOFade(1f, 0.25f);
         interactText.transform.localScale = Vector3.one * 1.15f;
-        scaleTween = interactText.transform.DOScale(1f, 0.25f).SetEase(Ease.OutBack);
-        isShowing = true;
+        m_interactScaleTween = interactText.transform.DOScale(1f, 0.25f).SetEase(Ease.OutBack);
+        m_isShowingInteract = true;
     }
 
-    void HidePrompt()
+    private void HideInteractPrompt()
     {
-        if (!isShowing) return;
+        if (!m_isShowingInteract) return;
 
-        fadeTween?.Kill();
-        scaleTween?.Kill();
-        fadeTween = interactText.DOFade(0f, 0.2f)
+        m_interactFadeTween?.Kill();
+        m_interactScaleTween?.Kill();
+        m_interactFadeTween = interactText.DOFade(0f, 0.2f)
             .OnComplete(() => interactText.gameObject.SetActive(false));
-        scaleTween = interactText.transform.DOScale(0.95f, 0.2f);
-        isShowing = false;
+        m_interactScaleTween = interactText.transform.DOScale(0.95f, 0.2f);
+        m_isShowingInteract = false;
     }
 
-    void SitDown(Transform sitTarget)
+    private void ShowThrowPrompt(string message)
     {
-        movement.canMove = isSitting;
-        if (!isSitting)
+        if (m_isShowingThrow && throwText.text == message) return;
+
+        throwText.text = message;
+        throwText.gameObject.SetActive(true);
+        m_throwFadeTween?.Kill();
+        m_throwScaleTween?.Kill();
+
+        m_throwFadeTween = throwText.DOFade(1f, 0.25f);
+        throwText.transform.localScale = Vector3.one * 1.15f;
+        m_throwScaleTween = throwText.transform.DOScale(1f, 0.25f).SetEase(Ease.OutBack);
+        m_isShowingThrow = true;
+    }
+
+    private void HideThrowPrompt()
+    {
+        if (!m_isShowingThrow) return;
+
+        m_throwFadeTween?.Kill();
+        m_throwScaleTween?.Kill();
+        m_throwFadeTween = throwText.DOFade(0f, 0.2f)
+            .OnComplete(() => throwText.gameObject.SetActive(false));
+        m_throwScaleTween = throwText.transform.DOScale(0.95f, 0.2f);
+        m_isShowingThrow = false;
+    }
+
+    private void SitDown(Transform sitTarget)
+    {
+        movement.canMove = m_isSitting;
+        if (!m_isSitting)
         {
-            preSeatPosition = movement.transform.position;
+            m_preSeatPosition = movement.transform.position;
             movement.transform.DOMove(sitTarget.position, 0.5f)
                 .SetEase(Ease.OutCubic)
-                .OnComplete(() => isSitting = true);
+                .OnComplete(() => m_isSitting = true);
         }
         else
         {
-            movement.transform.DOMove(preSeatPosition, 0.5f)
+            movement.transform.DOMove(m_preSeatPosition, 0.5f)
                 .SetEase(Ease.OutCubic)
-                .OnComplete(() => isSitting = false);
+                .OnComplete(() => m_isSitting = false);
         }
     }
 }

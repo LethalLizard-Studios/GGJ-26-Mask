@@ -68,7 +68,7 @@ MonoBehaviour:
   sprintSpeed: 6
   gravity: -9.81
   jumpHeight: 1.5
-  sprintFOV: 85
+  sprintFOV: 95
   normalFOV: 75
   fovTweenTime: 0.25
   canMove: 1
@@ -145,15 +145,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5fe6f5bb0da3af40a7f23b064052c2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interactDistance: 6
+  pickupPoint: {fileID: 7355440307736716489}
+  interactDistance: 3
   interactableLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 8
   interactKey: 102
   sitKey: 101
   movement: {fileID: 7328071466814952391}
   interactText: {fileID: 0}
-  promptMessage: Press F to pick up
+  throwText: {fileID: 0}
+  promptMessage: Pick Up
+  promptSittingMessage: Sit
+  throwPromptMessage: 'Throw [Right Trigger]'
 --- !u!20 &8115590654221242057
 Camera:
   m_ObjectHideFlags: 0
@@ -163,8 +167,8 @@ Camera:
   m_GameObject: {fileID: 2701433985646438337}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -315,7 +319,7 @@ Transform:
   m_GameObject: {fileID: 5249915252582579466}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

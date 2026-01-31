@@ -1,88 +1,87 @@
-using UnityEngine;
+using System;
 using DG.Tweening;
+using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PropPickup : MonoBehaviour
 {
-    public Transform sitPoint = null;
+    public event Action<bool> HeldChanged;
+
+    [Header("Optional")]
+    [SerializeField] private Transform sitPoint = null;
 
     [Header("Pickup Settings")]
-    public float moveDuration = 0.35f; // total pickup travel time
-    public float throwForce = 10f;
+    [SerializeField] private float moveDuration = 0.35f;
+    [SerializeField] private float throwForce = 10f;
 
     [Header("Hold Smoothing")]
-    public float followSmooth = 10f; // higher = tighter follow
-    public float rotateSmooth = 10f;
+    [SerializeField] private float followSmooth = 10f;
+    [SerializeField] private float rotateSmooth = 10f;
 
-    private Rigidbody rb;
-    private Collider col;
-    private bool isHeld = false;
-    private Transform pickupPoint;
-    private Quaternion heldRotation;
+    public Transform SitPoint => sitPoint;
+    public bool IsHeld => m_isHeld;
 
-    void Start()
+    private Rigidbody m_rb;
+    private Collider m_col;
+    private bool m_isHeld;
+    private Transform m_pickupPoint;
+    private Quaternion m_heldRotation;
+    private Tween m_pickupTween;
+
+    private void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        col = GetComponent<Collider>();
+        m_rb = GetComponent<Rigidbody>();
+        m_col = GetComponent<Collider>();
     }
 
-    public void Pickup()
+    public void Pickup(Transform point)
     {
-        if (isHeld) return;
-
-        PropPickupPoint point = FindObjectOfType<PropPickupPoint>();
+        if (m_isHeld) return;
         if (point == null) return;
-        pickupPoint = point.transform;
 
-        rb.isKinematic = true;
-        col.enabled = false; // turn off physics collisions while held
+        m_pickupPoint = point;
 
-        // Move fast then slow down near pickup point
-        transform.DOMove(pickupPoint.position, moveDuration)
+        m_rb.isKinematic = true;
+        m_col.enabled = false;
+
+        m_pickupTween?.Kill();
+        m_pickupTween = transform.DOMove(m_pickupPoint.position, moveDuration)
             .SetEase(Ease.OutCubic)
-            .OnComplete(() =>
-            {
-                isHeld = true;
-                heldRotation = transform.rotation;
+            .OnComplete(() => {
+                SetHeld(true);
+                m_heldRotation = transform.rotation;
             });
     }
 
-    void Update()
+    private void Update()
     {
-        if (isHeld && pickupPoint)
-        {
-            // Smoothly move and rotate toward pickup point
-            transform.position = Vector3.Lerp(
-                transform.position,
-                pickupPoint.position,
-                Time.deltaTime * followSmooth
-            );
+        if (!m_isHeld || m_pickupPoint == null) return;
 
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                heldRotation,
-                Time.deltaTime * rotateSmooth
-            );
+        transform.position = Vector3.Lerp(transform.position, m_pickupPoint.position, Time.deltaTime * followSmooth);
+        transform.rotation = Quaternion.Slerp(transform.rotation, m_heldRotation, Time.deltaTime * rotateSmooth);
 
-            if (Input.GetMouseButtonDown(0))
-                Throw();
-        }
+        if (Input.GetMouseButtonDown(0)) Throw();
     }
 
-    void Throw()
+    private void Throw()
     {
-        isHeld = false;
-        rb.isKinematic = false;
+        SetHeld(false);
 
-        // Apply throw velocity
-        rb.linearVelocity = pickupPoint.forward * throwForce;
+        m_rb.isKinematic = false;
+        m_rb.linearVelocity = m_pickupPoint.forward * throwForce;
 
-        // Small delay before re-enabling collider (to avoid clipping with player)
         Invoke(nameof(EnableCollider), 0.1f);
     }
 
-    void EnableCollider()
+    private void EnableCollider()
     {
-        col.enabled = true;
+        m_col.enabled = true;
+    }
+
+    private void SetHeld(bool isHeld)
+    {
+        if (m_isHeld == isHeld) return;
+        m_isHeld = isHeld;
+        HeldChanged?.Invoke(m_isHeld);
     }
 }
