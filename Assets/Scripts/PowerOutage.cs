@@ -6,6 +6,7 @@ using DG.Tweening;
 public class PowerOutage : MonoBehaviour
 {
     [SerializeField] private GameObject m_OutageParent;
+    [SerializeField] private BoxCollider m_FuseBoxCollider;
 
     [Header("Lights")]
     [SerializeField] private Light[] m_Lights;
@@ -15,12 +16,14 @@ public class PowerOutage : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioSource m_OutageAudioSource;
+    [SerializeField] private AudioSource[] m_OutageFlickerAudioSource;
     [SerializeField] private AudioSource[] m_AudioSourcesToStop;
 
     [Header("Post Processing")]
     [SerializeField] private Volume m_OutageGlobalVolume;
     [SerializeField] private float m_VolumeFadeDuration = 1.5f;
 
+    private int m_CurrentFlickerIndex = 0;
     private Coroutine m_OutageRoutine;
     private Tween m_VolumeTween;
 
@@ -68,6 +71,7 @@ public class PowerOutage : MonoBehaviour
                 .SetEase(Ease.InOutSine);
         }
 
+        m_FuseBoxCollider.enabled = false;
         m_OutageParent.SetActive(false);
     }
 
@@ -88,7 +92,22 @@ public class PowerOutage : MonoBehaviour
 
                 bool rand = Random.value > 0.5f;
 
-                m_Lights[i].enabled = rand;
+                if (i % 3 == 0)
+                {
+                    m_OutageFlickerAudioSource[m_CurrentFlickerIndex].pitch = Random.Range(0.9f, 1.1f);
+                    m_OutageFlickerAudioSource[m_CurrentFlickerIndex].Play();
+                    m_CurrentFlickerIndex++;
+
+                    if (m_CurrentFlickerIndex >= m_OutageFlickerAudioSource.Length)
+                        m_CurrentFlickerIndex = 0;
+                }
+
+                if (!rand)
+                    m_OutageGlobalVolume.weight += 0.15f;
+                else
+                    m_OutageGlobalVolume.weight = 0.0f;
+
+                    m_Lights[i].enabled = rand;
                 if (m_LightSecondaryObject[i] != null)
                     m_LightSecondaryObject[i].SetActive(rand);
             }
@@ -131,6 +150,8 @@ public class PowerOutage : MonoBehaviour
                     m_VolumeFadeDuration)
                 .SetEase(Ease.InOutSine);
         }
+
+        m_FuseBoxCollider.enabled = true;
 
         yield return new WaitForSeconds(5);
         m_OutageParent.SetActive(true);

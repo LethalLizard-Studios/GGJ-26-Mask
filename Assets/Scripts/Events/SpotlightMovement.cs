@@ -6,6 +6,7 @@ public class SpotlightMovement : MonoBehaviour
     [Header("References")]
     [SerializeField] private MeshRenderer m_MeshRenderer;
     [SerializeField] private Light m_Light;
+    [SerializeField] private AudioSource m_CompleteSound;
 
     [Header("Visuals")]
     [SerializeField] private Material m_OnMaterial;
@@ -29,6 +30,11 @@ public class SpotlightMovement : MonoBehaviour
 
     private bool m_IsValid;
 
+    private void OnEnable()
+    {
+        ValidateLightPosition();
+    }
+
     private void Update()
     {
         float h = Input.GetAxis("Horizontal");
@@ -51,6 +57,8 @@ public class SpotlightMovement : MonoBehaviour
     {
         if (m_Light == null || m_MeshRenderer == null) return;
 
+        bool oldIsValid = m_IsValid;
+
         Vector3 euler = transform.localEulerAngles;
 
         float xDiff = Mathf.Abs(Mathf.DeltaAngle(euler.x, m_CorrectX));
@@ -63,6 +71,9 @@ public class SpotlightMovement : MonoBehaviour
 
         if (m_IsValid)
         {
+            if (!oldIsValid)
+                m_CompleteSound.Play();
+
             ApplyOnVisuals();
         }
         else
