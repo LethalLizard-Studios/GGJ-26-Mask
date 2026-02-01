@@ -1,5 +1,6 @@
 using DG.Tweening;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -13,6 +14,7 @@ public class OutageQuickEvent : MonoBehaviour
     [SerializeField] private PowerOutage m_PowerOutage;
     [SerializeField] private AudioSource m_WrongSound;
     [SerializeField] private AudioSource m_CorrectSound;
+    [SerializeField] private TextMeshProUGUI m_CountdownText;
 
     [Header("Settings")]
     [SerializeField] private Vector2 m_RingTotalTime = new Vector2(1.0f, 4.0f);
@@ -68,8 +70,23 @@ public class OutageQuickEvent : MonoBehaviour
     private IEnumerator QuickEventSequence()
     {
         int strokeNumber = Mathf.RoundToInt(Random.Range(m_NumberOfStrokes.x, m_NumberOfStrokes.y));
+        m_CountdownText.enabled = true;
 
-        yield return new WaitForSeconds(3.0f);
+        for (int i = 3; i >= 1; i--)
+        {
+            m_CountdownText.text = i.ToString();
+
+            Sequence seq = DOTween.Sequence();
+            seq.Join(m_CountdownText.DOFade(0f, 0.1f));
+            seq.Join(m_CountdownText.transform.DOScale(Vector3.zero, 0.1f));
+            seq.Append(m_CountdownText.DOFade(1f, 0.3f).SetEase(Ease.OutBack));
+            seq.Join(m_CountdownText.transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack));
+            seq.AppendInterval(0.7f);
+
+            yield return seq.WaitForCompletion();
+        }
+
+        m_CountdownText.enabled = false;
 
         for (int i = 0; i < strokeNumber; i++)
         {
@@ -107,6 +124,7 @@ public class OutageQuickEvent : MonoBehaviour
             }
             else
             {
+                i--;
                 yield return FlashFailResult();
             }
 

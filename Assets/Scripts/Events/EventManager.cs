@@ -31,6 +31,7 @@ public class EventManager : MonoBehaviour
     [SerializeField] private Transform m_OfficeLocation;
     [SerializeField] private Transform m_Catwalk;
     [SerializeField] private Transform m_MainStageLocation;
+    [SerializeField] private SlidingDoor m_SlidingDoor;
 
     private Coroutine m_NightRoutine;
     private float m_NightTimeRemaining;
@@ -159,6 +160,7 @@ public class EventManager : MonoBehaviour
     public void SpotlightBlackout()
     {
         Debug.Log("Spotlight Blackout");
+        m_SlidingDoor.Open();
         m_StageRunner.BeginMove();
     }
 
@@ -204,8 +206,9 @@ public class EventManager : MonoBehaviour
         if (closest == m_OfficeLocation || closest == m_Catwalk) targetMaskObject = m_MaskAtOfficeDoor;
 
         if (targetMaskObject != null) targetMaskObject.SetActive(true);
-
         if (m_AttackedAudio != null) m_AttackedAudio.Play();
+
+        m_SlidingDoor.Open();
 
         float endTime = Time.time + m_MaskKillDelay;
         while (Time.time < endTime)
@@ -216,6 +219,7 @@ public class EventManager : MonoBehaviour
                 if (m_MaskOnStage != null) m_MaskOnStage.SetActive(true);
                 if (m_AttackedAudio != null) m_AttackedAudio.Stop();
                 m_MaskIsActive = false;
+                m_SlidingDoor.Close();
                 yield break;
             }
 

@@ -12,6 +12,8 @@ public class SpotlightMovement : MonoBehaviour
     [Header("Visuals")]
     [SerializeField] private Material m_OnMaterial;
     [SerializeField] private Material m_RedMaterial;
+    [SerializeField] private MeshRenderer[] m_backMeshes;
+    [SerializeField] private Material m_OnBackMaterial;
     [SerializeField] private Material m_OnEmmisiveMaterial;
     [SerializeField] private Material m_RedEmissiveMaterial;
     [SerializeField] private Color m_OnColor = Color.white;
@@ -147,6 +149,11 @@ public class SpotlightMovement : MonoBehaviour
         {
             m_MeshRenderer.material = m_OnMaterial;
             m_MeshRendererStatus.material = m_OnEmmisiveMaterial;
+
+            for (int i = 0; i < m_backMeshes.Length; i++)
+            {
+                m_backMeshes[i].material = m_OnBackMaterial;
+            }
         }
     }
 
@@ -157,6 +164,11 @@ public class SpotlightMovement : MonoBehaviour
         {
             m_MeshRenderer.material = m_RedMaterial;
             m_MeshRendererStatus.material = m_RedEmissiveMaterial;
+
+            for (int i = 0; i < m_backMeshes.Length; i++)
+            {
+                m_backMeshes[i].material = m_RedEmissiveMaterial;
+            }
         }
     }
 

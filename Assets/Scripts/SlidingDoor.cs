@@ -1,12 +1,13 @@
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.Events;
 
 public class SlidingDoor : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Transform m_LeftDoor;
     [SerializeField] private Transform m_RightDoor;
-
+ 
     [Header("X Distances (positive)")]
     [SerializeField] private float m_ClosedX = 0f;
     [SerializeField] private float m_OpenedX = 1f;
@@ -19,6 +20,9 @@ public class SlidingDoor : MonoBehaviour
     [SerializeField] private float m_CloseBounceOpenAmount = 0.12f;
     [SerializeField] private float m_CloseBounceDuration = 0.08f;
 
+    [SerializeField] private UnityEvent m_OnDoorOpen;
+    [SerializeField] private UnityEvent m_OnDoorClose;
+
     private Sequence m_Sequence;
 
     private void Awake()
@@ -29,20 +33,20 @@ public class SlidingDoor : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-
         Open();
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (!other.CompareTag("Player")) return;
-
         Close();
     }
 
-    private void Open()
+    public void Open()
     {
         if (m_LeftDoor == null || m_RightDoor == null) return;
+
+        m_OnDoorOpen.Invoke();
 
         m_Sequence.Kill(false);
         m_Sequence = DOTween.Sequence();
@@ -51,9 +55,11 @@ public class SlidingDoor : MonoBehaviour
         m_Sequence.Join(m_RightDoor.DOLocalMoveX(-m_OpenedX, m_OpenDuration).SetEase(Ease.OutCubic));
     }
 
-    private void Close()
+    public void Close()
     {
         if (m_LeftDoor == null || m_RightDoor == null) return;
+
+        m_OnDoorClose.Invoke();
 
         m_Sequence.Kill(false);
         m_Sequence = DOTween.Sequence();

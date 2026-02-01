@@ -9,6 +9,8 @@ public class PowerOutage : MonoBehaviour
     [SerializeField] private GameObject m_OutageParent;
     [SerializeField] private GameObject m_StageParent;
     [SerializeField] private BoxCollider m_FuseBoxCollider;
+    [SerializeField] private SlidingDoor m_SlidingDoor;
+    [SerializeField] private BoxCollider m_BoxColliderReturn;
 
     [Header("Lights")]
     [SerializeField] private Light[] m_Lights;
@@ -98,6 +100,8 @@ public class PowerOutage : MonoBehaviour
                 .SetEase(Ease.InOutSine);
         }
 
+        m_BoxColliderReturn.enabled = true;
+        m_SlidingDoor.Open();
         m_IsPowerOut = false;
         m_FuseBoxCollider.enabled = false;
         m_OutageParent.SetActive(false);
@@ -182,6 +186,7 @@ public class PowerOutage : MonoBehaviour
 
         m_StageParent.SetActive(false);
 
+        m_SlidingDoor.Open();
         m_FuseBoxCollider.enabled = true;
 
         m_OutageParent.SetActive(true);
