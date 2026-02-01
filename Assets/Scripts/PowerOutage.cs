@@ -23,21 +23,28 @@ public class PowerOutage : MonoBehaviour
     [SerializeField] private Volume m_OutageGlobalVolume;
     [SerializeField] private float m_VolumeFadeDuration = 1.5f;
 
+    private bool m_IsPowerOut = false;
     private int m_CurrentFlickerIndex = 0;
     private Coroutine m_OutageRoutine;
     private Tween m_VolumeTween;
 
     public void StartOutage()
     {
+        if (m_IsPowerOut)
+            return;
+
         if (m_OutageRoutine != null)
         {
             StopCoroutine(m_OutageRoutine);
             m_OutageRoutine = null;
         }
 
+        m_IsPowerOut = true;
         m_VolumeTween.Kill(false);
         m_OutageRoutine = StartCoroutine(OutageSequence());
     }
+
+    public bool IsPowerOut() { return m_IsPowerOut; }
 
     public void PowerRestored()
     {
@@ -71,6 +78,7 @@ public class PowerOutage : MonoBehaviour
                 .SetEase(Ease.InOutSine);
         }
 
+        m_IsPowerOut = false;
         m_FuseBoxCollider.enabled = false;
         m_OutageParent.SetActive(false);
     }
@@ -153,7 +161,7 @@ public class PowerOutage : MonoBehaviour
 
         m_FuseBoxCollider.enabled = true;
 
-        yield return new WaitForSeconds(5);
+        yield return new WaitForSeconds(8);
         m_OutageParent.SetActive(true);
 
         m_OutageRoutine = null;

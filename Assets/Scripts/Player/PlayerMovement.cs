@@ -1,5 +1,6 @@
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
@@ -24,6 +25,23 @@ public class PlayerMovement : MonoBehaviour
 
     public bool canMove = true;
 
+    [SerializeField] private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
+
+    private void OnEnable()
+    {
+        m_InputActions.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
+    }
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -40,19 +58,26 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleInput()
     {
-        bool wantsToSprint = Input.GetKey(KeyCode.LeftShift) && Input.GetAxis("Vertical") > 0;
+        if (!canMove)
+        {
+            if (isSprinting)
+            {
+                isSprinting = false;
+                UpdateFovForSprintState();
+            }
+            return;
+        }
+
+        bool sprintHeld = m_InputActions.Player.Sprint.IsPressed();
+        Vector2 moveRaw = m_InputActions.Player.Move.ReadValue<Vector2>();
+        bool movingForward = moveRaw.y > 0.01f;
+
+        bool wantsToSprint = sprintHeld && movingForward;
 
         if (wantsToSprint != isSprinting)
         {
             isSprinting = wantsToSprint;
-
-            if (playerCamera != null)
-            {
-                float targetFOV = isSprinting ? sprintFOV : normalFOV;
-                fovTween?.Kill();
-                fovTween = playerCamera.DOFieldOfView(targetFOV, fovTweenTime)
-                                       .SetEase(Ease.OutSine);
-            }
+            UpdateFovForSprintState();
         }
     }
 
@@ -63,13 +88,10 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        float moveX = Input.GetAxisRaw("Horizontal");
-        float moveZ = Input.GetAxisRaw("Vertical");
+        Vector2 moveRaw = m_InputActions.Player.Move.ReadValue<Vector2>();
+        Vector3 move = transform.right * moveRaw.x + transform.forward * moveRaw.y;
+        if (move.sqrMagnitude > 1f) move.Normalize();
 
-        Vector3 move = transform.right * moveX + transform.forward * moveZ;
-        move.Normalize();
-
-        // Gravity
         if (controller.isGrounded && verticalVelocity < 0)
             verticalVelocity = -2f;
 
@@ -79,5 +101,15 @@ public class PlayerMovement : MonoBehaviour
         float currentSpeed = isSprinting ? sprintSpeed : walkSpeed;
 
         controller.Move(move * currentSpeed * Time.deltaTime);
+    }
+
+    private void UpdateFovForSprintState()
+    {
+        if (playerCamera == null) return;
+
+        float targetFOV = isSprinting ? sprintFOV : normalFOV;
+        fovTween?.Kill();
+        fovTween = playerCamera.DOFieldOfView(targetFOV, fovTweenTime)
+                               .SetEase(Ease.OutSine);
     }
 }

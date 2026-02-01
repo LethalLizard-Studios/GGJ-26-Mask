@@ -11,18 +11,37 @@ public class PlayerLook : MonoBehaviour
 
     float xRotation = 0f;
 
+    [SerializeField] private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
+    private void OnEnable()
+    {
+        m_InputActions.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
+    }
+
     private void Update()
     {
         if (!canLook) return;
 
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        Vector2 look = m_InputActions.Player.Look.ReadValue<Vector2>();
+
+        float mouseX = look.x * mouseSensitivity * Time.deltaTime;
+        float mouseY = look.y * mouseSensitivity * Time.deltaTime;
 
         // Rotate player body left/right
         transform.Rotate(Vector3.up * mouseX);

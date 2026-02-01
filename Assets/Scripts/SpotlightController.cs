@@ -7,13 +7,28 @@ public class SpotlightController : MonoBehaviour
     [SerializeField] private Transform[] spotlightLookAt;
     [SerializeField] private SpotlightMovement[] spotlightMovements;
 
-    [SerializeField] private KeyCode leaveKey;
-
     [SerializeField] private GameObject playerParent;
     [SerializeField] private GameObject spotlightParent;
 
     private bool isInSpotlight = false;
     private Transform currentLookAt;
+
+    [SerializeField] private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
+
+    private void OnEnable()
+    {
+        m_InputActions.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
+    }
 
     public void TakeControl(int index)
     {
@@ -22,6 +37,7 @@ public class SpotlightController : MonoBehaviour
         cameraPivot.position = spotlights[lightIndex].position;
         cameraPivot.GetChild(0).LookAt(spotlightLookAt[lightIndex], Vector3.up);
         currentLookAt = spotlightLookAt[lightIndex];
+        spotlightMovements[lightIndex].IsInControl = true;
 
         spotlightParent.SetActive(true);
         playerParent.SetActive(false);
@@ -39,7 +55,7 @@ public class SpotlightController : MonoBehaviour
 
     private void Update()
     {
-        if (isInSpotlight && Input.GetKeyDown(leaveKey))
+        if (isInSpotlight && m_InputActions.Player.ExitCamera.WasPressedThisFrame())
         {
             LeaveControls();
         }
@@ -52,7 +68,7 @@ public class SpotlightController : MonoBehaviour
 
         for (int i = 0; i < spotlightMovements.Length; i++)
         {
-            spotlightMovements[i].enabled = false;
+            spotlightMovements[i].IsInControl = false;
         }
 
         isInSpotlight = false;

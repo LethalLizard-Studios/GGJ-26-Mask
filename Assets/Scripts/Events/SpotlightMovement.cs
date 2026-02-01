@@ -5,12 +5,15 @@ public class SpotlightMovement : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private MeshRenderer m_MeshRenderer;
+    [SerializeField] private MeshRenderer m_MeshRendererStatus;
     [SerializeField] private Light m_Light;
     [SerializeField] private AudioSource m_CompleteSound;
 
     [Header("Visuals")]
     [SerializeField] private Material m_OnMaterial;
     [SerializeField] private Material m_RedMaterial;
+    [SerializeField] private Material m_OnEmmisiveMaterial;
+    [SerializeField] private Material m_RedEmissiveMaterial;
     [SerializeField] private Color m_OnColor = Color.white;
     [SerializeField] private Color m_RedColor = Color.red;
     [SerializeField] private Image m_Correct;
@@ -28,17 +31,35 @@ public class SpotlightMovement : MonoBehaviour
     [Header("Input")]
     [SerializeField] private float m_RotationSpeed = 90f;
 
+    [HideInInspector] public bool IsInControl = false;
+
     private bool m_IsValid;
+
+    [SerializeField] private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
 
     private void OnEnable()
     {
+        m_InputActions.Player.Enable();
         ValidateLightPosition();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
     }
 
     private void Update()
     {
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
+        if (!IsInControl) return;
+
+        Vector2 move = m_InputActions.Player.Move.ReadValue<Vector2>();
+        float h = move.x;
+        float v = move.y;
 
         if (Mathf.Approximately(h, 0f) && Mathf.Approximately(v, 0f)) return;
 
@@ -71,7 +92,7 @@ public class SpotlightMovement : MonoBehaviour
 
         if (m_IsValid)
         {
-            if (!oldIsValid)
+            if (!oldIsValid && IsInControl)
                 m_CompleteSound.Play();
 
             ApplyOnVisuals();
@@ -104,6 +125,7 @@ public class SpotlightMovement : MonoBehaviour
         if (m_OnMaterial != null)
         {
             m_MeshRenderer.material = m_OnMaterial;
+            m_MeshRendererStatus.material = m_OnEmmisiveMaterial;
         }
     }
 
@@ -113,6 +135,7 @@ public class SpotlightMovement : MonoBehaviour
         if (m_RedMaterial != null)
         {
             m_MeshRenderer.material = m_RedMaterial;
+            m_MeshRendererStatus.material = m_RedEmissiveMaterial;
         }
     }
 

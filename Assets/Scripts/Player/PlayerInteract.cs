@@ -1,6 +1,7 @@
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerInteract : MonoBehaviour
 {
@@ -8,8 +9,6 @@ public class PlayerInteract : MonoBehaviour
     [SerializeField] private PropPickupPoint pickupPoint;
     [SerializeField] private float interactDistance = 3f;
     [SerializeField] private LayerMask interactableLayer;
-    [SerializeField] private KeyCode interactKey = KeyCode.F;
-    [SerializeField] private KeyCode sitKey = KeyCode.E;
     [SerializeField] private PlayerMovement movement;
 
     [Header("UI")]
@@ -34,18 +33,32 @@ public class PlayerInteract : MonoBehaviour
     private Tween m_throwFadeTween;
     private Tween m_throwScaleTween;
 
+    [SerializeField] private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
+
+    private void OnEnable()
+    {
+        m_InputActions.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
+
+        UnsubscribeFromPickup();
+        HideInteractPrompt();
+        HideThrowPrompt();
+    }
+
     private void Start()
     {
         m_cam = GetComponent<Camera>();
         InitializeText(interactText);
         InitializeText(throwText);
-    }
-
-    private void OnDisable()
-    {
-        UnsubscribeFromPickup();
-        HideInteractPrompt();
-        HideThrowPrompt();
     }
 
     private void InitializeText(TextMeshProUGUI text)
@@ -78,12 +91,12 @@ public class PlayerInteract : MonoBehaviour
                         ? promptSittingMessage + "\n" + promptMessage
                         : promptMessage);
 
-                    if (Input.GetKeyDown(interactKey))
+                    if (m_InputActions.Player.Interact.WasPressedThisFrame())
                     {
                         m_currentPickup.Pickup(pickupPoint.transform);
                         HideInteractPrompt();
                     }
-                    else if (Input.GetKeyDown(sitKey) && m_currentPickup.SitPoint != null)
+                    else if (m_InputActions.Player.Sit.WasPressedThisFrame() && m_currentPickup.SitPoint != null)
                     {
                         SitDown(m_currentPickup.SitPoint);
                     }
@@ -100,7 +113,7 @@ public class PlayerInteract : MonoBehaviour
                     }
 
                     ShowInteractPrompt(currentInteractable.promptMessage);
-                    if (Input.GetKeyDown(interactKey)) currentInteractable.Interact();
+                    if (m_InputActions.Player.Interact.WasPressedThisFrame()) currentInteractable.Interact();
 
                     return;
                 }

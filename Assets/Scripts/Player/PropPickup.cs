@@ -1,6 +1,7 @@
 using System;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PropPickup : MonoBehaviour
@@ -47,7 +48,8 @@ public class PropPickup : MonoBehaviour
         m_pickupTween?.Kill();
         m_pickupTween = transform.DOMove(m_pickupPoint.position, moveDuration)
             .SetEase(Ease.OutCubic)
-            .OnComplete(() => {
+            .OnComplete(() =>
+            {
                 SetHeld(true);
                 m_heldRotation = transform.rotation;
             });
@@ -60,7 +62,7 @@ public class PropPickup : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, m_pickupPoint.position, Time.deltaTime * followSmooth);
         transform.rotation = Quaternion.Slerp(transform.rotation, m_heldRotation, Time.deltaTime * rotateSmooth);
 
-        if (Input.GetMouseButtonDown(0)) Throw();
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) Throw();
     }
 
     private void Throw()
