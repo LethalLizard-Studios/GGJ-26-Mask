@@ -17,6 +17,7 @@ public class MoveToPosition : MonoBehaviour
     [SerializeField] private Path[] m_Paths;
 
     [SerializeField] private AudioSource m_MoveSound;
+    [SerializeField] private AudioSource m_MoveSoundRun;
 
     [SerializeField] private bool m_KillsPlayerAtEnd = false;
 
@@ -48,6 +49,7 @@ public class MoveToPosition : MonoBehaviour
         if (path == null) return;
 
         m_MoveSound.Play();
+        m_MoveSoundRun.Play();
         m_MoveRoutine = StartCoroutine(FollowPath(path));
     }
 
@@ -107,6 +109,7 @@ public class MoveToPosition : MonoBehaviour
                 if ((transform.position - m_Player.position).sqrMagnitude <= 2.0 * 2.0)
                 {
                     m_MoveSound.Stop();
+                    m_MoveSoundRun.Stop();
                     KilledPlayer();
                     yield break;
                 }
@@ -114,6 +117,7 @@ public class MoveToPosition : MonoBehaviour
         }
 
         m_MoveSound.Stop();
+        m_MoveSoundRun.Stop();
         m_MoveRoutine = null;
     }
 

@@ -11,6 +11,8 @@ public class OutageQuickEvent : MonoBehaviour
     [SerializeField] private BoxCollider m_BoxCollider;
     [SerializeField] private GameObject m_OutageCanvas;
     [SerializeField] private PowerOutage m_PowerOutage;
+    [SerializeField] private AudioSource m_WrongSound;
+    [SerializeField] private AudioSource m_CorrectSound;
 
     [Header("Settings")]
     [SerializeField] private Vector2 m_RingTotalTime = new Vector2(1.0f, 4.0f);
@@ -173,6 +175,7 @@ public class OutageQuickEvent : MonoBehaviour
     {
         if (m_ProgressRing == null) return;
 
+        m_CorrectSound.Play();
         m_RingColorTween.Kill(false);
         m_ProgressRing.fillAmount = 1f;
         m_RingColorTween = m_ProgressRing.DOColor(m_RingSuccessColor, 0.08f);
@@ -185,6 +188,7 @@ public class OutageQuickEvent : MonoBehaviour
         m_RingColorTween.Kill(false);
         m_ProgressRing.fillAmount = 1f;
 
+        m_WrongSound.Play();
         m_ProgressRing.color = m_RingFailFlashColor;
         m_RingColorTween = m_ProgressRing.DOColor(m_RingIdleColor, 0.25f);
 

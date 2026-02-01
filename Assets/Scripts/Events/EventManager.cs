@@ -110,6 +110,7 @@ public class EventManager : MonoBehaviour
         }
 
         m_NightTimeRemaining = 0f;
+        NightOver();
         UpdateTimerText(m_NightTimeRemaining);
 
         m_IsNightRunning = false;
@@ -277,7 +278,6 @@ public class EventManager : MonoBehaviour
         if (m_TimerText == null) return;
 
         int totalSeconds = Mathf.CeilToInt(timeRemainingSeconds);
-        if (totalSeconds < 0) NightOver();
 
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
