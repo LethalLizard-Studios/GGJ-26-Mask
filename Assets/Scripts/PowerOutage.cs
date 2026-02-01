@@ -1,0 +1,140 @@
+using System.Collections;
+using UnityEngine;
+using UnityEngine.Rendering;
+using DG.Tweening;
+
+public class PowerOutage : MonoBehaviour
+{
+    [SerializeField] private GameObject m_OutageParent;
+
+    [Header("Lights")]
+    [SerializeField] private Light[] m_Lights;
+    [SerializeField] private GameObject[] m_LightSecondaryObject;
+    [SerializeField] private float m_FlickerDuration = 3f;
+    [SerializeField] private Vector2 m_FlickerInterval = new Vector2(0.05f, 0.2f);
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource m_OutageAudioSource;
+    [SerializeField] private AudioSource[] m_AudioSourcesToStop;
+
+    [Header("Post Processing")]
+    [SerializeField] private Volume m_OutageGlobalVolume;
+    [SerializeField] private float m_VolumeFadeDuration = 1.5f;
+
+    private Coroutine m_OutageRoutine;
+    private Tween m_VolumeTween;
+
+    public void StartOutage()
+    {
+        if (m_OutageRoutine != null)
+        {
+            StopCoroutine(m_OutageRoutine);
+            m_OutageRoutine = null;
+        }
+
+        m_VolumeTween.Kill(false);
+        m_OutageRoutine = StartCoroutine(OutageSequence());
+    }
+
+    public void PowerRestored()
+    {
+        if (m_AudioSourcesToStop != null)
+        {
+            for (int i = 0; i < m_AudioSourcesToStop.Length; i++)
+            {
+                AudioSource s = m_AudioSourcesToStop[i];
+                if (s == null) continue;
+
+                s.enabled = true;
+            }
+        }
+
+        for (int i = 0; i < m_Lights.Length; i++)
+        {
+            if (m_Lights[i] == null) continue;
+
+            m_Lights[i].enabled = true;
+            if (m_LightSecondaryObject[i] != null)
+                m_LightSecondaryObject[i].SetActive(true);
+        }
+
+        if (m_OutageGlobalVolume != null)
+        {
+            m_VolumeTween = DOTween.To(
+                    () => m_OutageGlobalVolume.weight,
+                    v => m_OutageGlobalVolume.weight = v,
+                    0.0f,
+                    m_VolumeFadeDuration)
+                .SetEase(Ease.InOutSine);
+        }
+
+        m_OutageParent.SetActive(false);
+    }
+
+    private IEnumerator OutageSequence()
+    {
+        if (m_OutageGlobalVolume != null)
+        {
+            m_OutageGlobalVolume.weight = 0f;
+        }
+
+        float endTime = Time.time + m_FlickerDuration;
+
+        while (Time.time < endTime)
+        {
+            for (int i = 0; i < m_Lights.Length; i++)
+            {
+                if (m_Lights[i] == null) continue;
+
+                bool rand = Random.value > 0.5f;
+
+                m_Lights[i].enabled = rand;
+                if (m_LightSecondaryObject[i] != null)
+                    m_LightSecondaryObject[i].SetActive(rand);
+            }
+
+            float wait = Random.Range(m_FlickerInterval.x, m_FlickerInterval.y);
+            yield return new WaitForSeconds(wait);
+        }
+
+        if (m_AudioSourcesToStop != null)
+        {
+            for (int i = 0; i < m_AudioSourcesToStop.Length; i++)
+            {
+                AudioSource s = m_AudioSourcesToStop[i];
+                if (s == null) continue;
+
+                s.enabled = false;
+            }
+        }
+
+        if (m_OutageAudioSource != null)
+        {
+            m_OutageAudioSource.Play();
+        }
+
+        for (int i = 0; i < m_Lights.Length; i++)
+        {
+            if (m_Lights[i] == null) continue;
+
+            m_Lights[i].enabled = false;
+            if (m_LightSecondaryObject[i] != null)
+                m_LightSecondaryObject[i].SetActive(false);
+        }
+
+        if (m_OutageGlobalVolume != null)
+        {
+            m_VolumeTween = DOTween.To(
+                    () => m_OutageGlobalVolume.weight,
+                    v => m_OutageGlobalVolume.weight = v,
+                    1f,
+                    m_VolumeFadeDuration)
+                .SetEase(Ease.InOutSine);
+        }
+
+        yield return new WaitForSeconds(5);
+        m_OutageParent.SetActive(true);
+
+        m_OutageRoutine = null;
+    }
+}

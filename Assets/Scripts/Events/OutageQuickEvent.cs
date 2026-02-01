@@ -10,6 +10,7 @@ public class OutageQuickEvent : MonoBehaviour
     [SerializeField] private Image m_ProgressRing;
     [SerializeField] private BoxCollider m_BoxCollider;
     [SerializeField] private GameObject m_OutageCanvas;
+    [SerializeField] private PowerOutage m_PowerOutage;
 
     [Header("Settings")]
     [SerializeField] private Vector2 m_RingTotalTime = new Vector2(1.0f, 4.0f);
@@ -68,6 +69,8 @@ public class OutageQuickEvent : MonoBehaviour
         m_PlayerLook.canLook = true;
         m_PlayerCanvas.SetActive(true);
         m_OutageCanvas.SetActive(false);
+
+        m_PowerOutage.PowerRestored();
     }
 
     private void StartRingFill(float ringTime)
