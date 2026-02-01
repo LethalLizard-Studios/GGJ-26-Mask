@@ -33,9 +33,10 @@ public class SpotlightMovement : MonoBehaviour
 
     [HideInInspector] public bool IsInControl = false;
 
-    private bool m_IsValid;
+    [SerializeField] private bool m_IsValid = false;
 
     [SerializeField] private InputSystem_Actions m_InputActions;
+    [SerializeField] private EventManager m_EventManager;
 
     private void Awake()
     {
@@ -45,12 +46,30 @@ public class SpotlightMovement : MonoBehaviour
     private void OnEnable()
     {
         m_InputActions.Player.Enable();
-        ValidateLightPosition();
     }
 
     private void OnDisable()
     {
         m_InputActions.Player.Disable();
+    }
+
+    public void TakeControl()
+    {
+        IsInControl = true;
+        ValidateLightPosition();
+    }
+
+    public bool IsDisabled() { return !m_IsValid; }
+
+    public void MoveOffStage()
+    {
+        Debug.Log("Moving spotlight: "+IsInControl.ToString()+", "+m_IsValid.ToString());
+
+        if (IsInControl) return;
+        if (!m_IsValid) return;
+
+        transform.localRotation = Quaternion.Euler(m_MaxEulerRotation.x, m_MaxEulerRotation.y, 0f);
+        ValidateLightPosition();
     }
 
     private void Update()
@@ -89,6 +108,8 @@ public class SpotlightMovement : MonoBehaviour
 
         m_Correct.enabled = m_IsValid;
         m_Wrong.enabled = !m_IsValid;
+
+        m_EventManager.CheckSpotlights();
 
         if (m_IsValid)
         {

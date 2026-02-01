@@ -37,7 +37,7 @@ public class SpotlightController : MonoBehaviour
         cameraPivot.position = spotlights[lightIndex].position;
         cameraPivot.GetChild(0).LookAt(spotlightLookAt[lightIndex], Vector3.up);
         currentLookAt = spotlightLookAt[lightIndex];
-        spotlightMovements[lightIndex].IsInControl = true;
+        spotlightMovements[lightIndex].TakeControl();
 
         spotlightParent.SetActive(true);
         playerParent.SetActive(false);

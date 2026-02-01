@@ -1,11 +1,13 @@
+using DG.Tweening;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
-using DG.Tweening;
+using UnityEngine.SceneManagement;
 
 public class PowerOutage : MonoBehaviour
 {
     [SerializeField] private GameObject m_OutageParent;
+    [SerializeField] private GameObject m_StageParent;
     [SerializeField] private BoxCollider m_FuseBoxCollider;
 
     [Header("Lights")]
@@ -18,14 +20,19 @@ public class PowerOutage : MonoBehaviour
     [SerializeField] private AudioSource m_OutageAudioSource;
     [SerializeField] private AudioSource[] m_OutageFlickerAudioSource;
     [SerializeField] private AudioSource[] m_AudioSourcesToStop;
+    [SerializeField] private AudioSource m_AttackAudio;
 
     [Header("Post Processing")]
     [SerializeField] private Volume m_OutageGlobalVolume;
     [SerializeField] private float m_VolumeFadeDuration = 1.5f;
 
+    [Header("Fail Timer")]
+    [SerializeField] private float m_KillIfNotRestoredTime = 30f;
+
     private bool m_IsPowerOut = false;
     private int m_CurrentFlickerIndex = 0;
     private Coroutine m_OutageRoutine;
+    private Coroutine m_KillRoutine;
     private Tween m_VolumeTween;
 
     public void StartOutage()
@@ -39,15 +46,28 @@ public class PowerOutage : MonoBehaviour
             m_OutageRoutine = null;
         }
 
+        if (m_KillRoutine != null)
+        {
+            StopCoroutine(m_KillRoutine);
+            m_KillRoutine = null;
+        }
+
         m_IsPowerOut = true;
         m_VolumeTween.Kill(false);
         m_OutageRoutine = StartCoroutine(OutageSequence());
+        m_KillRoutine = StartCoroutine(KillIfNotRestoredSequence());
     }
 
     public bool IsPowerOut() { return m_IsPowerOut; }
 
     public void PowerRestored()
     {
+        if (m_KillRoutine != null)
+        {
+            StopCoroutine(m_KillRoutine);
+            m_KillRoutine = null;
+        }
+
         if (m_AudioSourcesToStop != null)
         {
             for (int i = 0; i < m_AudioSourcesToStop.Length; i++)
@@ -81,6 +101,7 @@ public class PowerOutage : MonoBehaviour
         m_IsPowerOut = false;
         m_FuseBoxCollider.enabled = false;
         m_OutageParent.SetActive(false);
+        m_StageParent.SetActive(true);
     }
 
     private IEnumerator OutageSequence()
@@ -115,7 +136,7 @@ public class PowerOutage : MonoBehaviour
                 else
                     m_OutageGlobalVolume.weight = 0.0f;
 
-                    m_Lights[i].enabled = rand;
+                m_Lights[i].enabled = rand;
                 if (m_LightSecondaryObject[i] != null)
                     m_LightSecondaryObject[i].SetActive(rand);
             }
@@ -159,11 +180,46 @@ public class PowerOutage : MonoBehaviour
                 .SetEase(Ease.InOutSine);
         }
 
+        m_StageParent.SetActive(false);
+
         m_FuseBoxCollider.enabled = true;
 
-        yield return new WaitForSeconds(8);
         m_OutageParent.SetActive(true);
 
         m_OutageRoutine = null;
+    }
+
+    private IEnumerator KillIfNotRestoredSequence()
+    {
+        float endTime = Time.time + m_KillIfNotRestoredTime;
+
+        while (Time.time < endTime)
+        {
+            if (!m_IsPowerOut)
+            {
+                m_KillRoutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        if (m_IsPowerOut)
+        {
+            m_AttackAudio.Play();
+
+            yield return new WaitForSeconds(1);
+
+            KilledPlayer();
+        }
+
+        m_KillRoutine = null;
+    }
+
+    private void KilledPlayer()
+    {
+        Debug.Log("Killed Player");
+
+        SceneManager.LoadScene(1);
     }
 }
