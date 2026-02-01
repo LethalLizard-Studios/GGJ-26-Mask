@@ -213,6 +213,7 @@ public class EventManager : MonoBehaviour
             {
                 if (targetMaskObject != null) targetMaskObject.SetActive(false);
                 if (m_MaskOnStage != null) m_MaskOnStage.SetActive(true);
+                if (m_AttackedAudio != null) m_AttackedAudio.Stop();
                 m_MaskIsActive = false;
                 yield break;
             }
@@ -276,7 +277,7 @@ public class EventManager : MonoBehaviour
         if (m_TimerText == null) return;
 
         int totalSeconds = Mathf.CeilToInt(timeRemainingSeconds);
-        if (totalSeconds < 0) totalSeconds = 0;
+        if (totalSeconds < 0) NightOver();
 
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
@@ -287,7 +288,12 @@ public class EventManager : MonoBehaviour
     private void KilledPlayer()
     {
         Debug.Log("Killed Player");
-
         SceneManager.LoadScene(1);
+    }
+
+    private void NightOver()
+    {
+        Debug.Log("Night Over");
+        SceneManager.LoadScene(3);
     }
 }
