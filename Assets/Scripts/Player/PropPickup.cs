@@ -28,6 +28,22 @@ public class PropPickup : MonoBehaviour
     private Transform m_pickupPoint;
     private Quaternion m_heldRotation;
     private Tween m_pickupTween;
+    private InputSystem_Actions m_InputActions;
+
+    private void Awake()
+    {
+        m_InputActions = new InputSystem_Actions();
+    }
+
+    private void OnEnable()
+    {
+        m_InputActions.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        m_InputActions.Player.Disable();
+    }
 
     private void Start()
     {
@@ -62,7 +78,7 @@ public class PropPickup : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, m_pickupPoint.position, Time.deltaTime * followSmooth);
         transform.rotation = Quaternion.Slerp(transform.rotation, m_heldRotation, Time.deltaTime * rotateSmooth);
 
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) Throw();
+        if (m_InputActions.Player.Throw.WasPressedThisFrame()) Throw();
     }
 
     private void Throw()

@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -180,7 +181,14 @@ public class EventManager : MonoBehaviour
 
         m_MaskIsActive = true;
 
-        if (m_MaskOnStage != null) m_MaskOnStage.SetActive(false);
+        if (m_MaskOnStage != null)
+        {
+            var maskTransform = m_MaskOnStage.transform;
+            Vector3 startPos = maskTransform.localPosition;
+            maskTransform.DOLocalMoveX(startPos.x + 3f, 1f);
+            yield return maskTransform.DOLocalMoveX(startPos.x - 3f, 1f).WaitForCompletion();
+            m_MaskOnStage.SetActive(false);
+        }
         if (m_MaskAtOfficeDoor != null) m_MaskAtOfficeDoor.SetActive(false);
 
         yield return new WaitForSeconds(Random.Range(6f, 20f));
@@ -188,7 +196,12 @@ public class EventManager : MonoBehaviour
         Transform closest = GetClosestMaskLocation();
         if (closest == null)
         {
-            if (m_MaskOnStage != null) m_MaskOnStage.SetActive(true);
+            if (m_MaskOnStage != null)
+            {
+                m_MaskOnStage.SetActive(true);
+                var maskTransform = m_MaskOnStage.transform;
+                maskTransform.localPosition = new Vector3(maskTransform.localPosition.x + 3f, maskTransform.localPosition.y, maskTransform.localPosition.z);
+            }
             m_MaskIsActive = false;
             yield break;
         }
@@ -216,7 +229,12 @@ public class EventManager : MonoBehaviour
             if (m_MaskController != null && m_MaskController.IsMaskOn)
             {
                 if (targetMaskObject != null) targetMaskObject.SetActive(false);
-                if (m_MaskOnStage != null) m_MaskOnStage.SetActive(true);
+                if (m_MaskOnStage != null)
+                {
+                    m_MaskOnStage.SetActive(true);
+                    var maskTransform = m_MaskOnStage.transform;
+                    maskTransform.localPosition = new Vector3(maskTransform.localPosition.x + 3f, maskTransform.localPosition.y, maskTransform.localPosition.z);
+                }
                 if (m_AttackedAudio != null) m_AttackedAudio.Stop();
                 m_MaskIsActive = false;
                 m_SlidingDoor.Close();
@@ -228,6 +246,7 @@ public class EventManager : MonoBehaviour
 
         KilledPlayer();
     }
+
 
     private Transform GetClosestMaskLocation()
     {
